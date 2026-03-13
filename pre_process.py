@@ -3,8 +3,8 @@ from gdsfactory.generic_tech import get_generic_pdk
 
 get_generic_pdk().activate()
 
-design_file = "output/lionx_gate/chip_design.gds"
-output_file = "output/lionx_gate/chip_design_merged_flattened.gds"
+design_file = "output/lionix_gate/chip_design.gds"
+output_file = "output/lionix_gate/chip_design_merged_flattened.gds"
 center_loc = ((12920 + 13040) / 2, (5297.5 + 5502.5) / 2)
 electrode_layer = (37, 0)
 ito_layer = (12, 0)

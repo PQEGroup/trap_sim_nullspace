@@ -7,7 +7,7 @@ get_generic_pdk().activate()
 
 processed_gds = "output/lionix_gate/chip_design_merged_flattened.gds"
 journal_filename = 'output/lionix_gate/chip_geometry.jou'
-abaqus_filename = 'output/lionix_gate/chip_geometry.inp'
+abaqus_filename = 'run_file/chip_geometry.inp'
 target_layer = (1, 0)
 
 component = gf.import_gds(processed_gds)
