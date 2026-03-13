@@ -13,8 +13,8 @@ x_grid = np.array(x_scan)
 y_grid = np.array(y_scan)
 z_grid = np.array(z_scan)
 
-x_grid *= 1e-6
-y_grid *= 1e-6
-z_grid *= 1e-6
+x_grid = x_grid*1e-6
+y_grid = y_grid*1e-6
+z_grid = z_grid*1e-6
 
 nses.writeGrid(filename, 0, '3DRECTMESH', x_grid, y_grid, z_grid, True)

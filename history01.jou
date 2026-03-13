@@ -1,0 +1,3 @@
+#!python
+cubit.cmd('reset')
+cubit.cmd('import abaqus  "/home/zx296/Desktop/trap_sim_nullspace/chip.inp" ')
