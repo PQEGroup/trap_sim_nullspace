@@ -1,8 +1,11 @@
 mesh_file='chip.inp'# Abaqus file
-input_deck_filename='chip_input.in'
-grid_file='ChipGridTiltX.h5'
-dc_electrode_ls = '1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22'
-rf_electrode_ls = '1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16'
+input_deck_filename='rf_sim.in'
+grid_file='z_scan.h5'
+electrode_num = 27
+rf_electrode_index = [13]
+gnd_electrode_index = [2, 14, 26]
+#excitation_electrodes = range(1, electrode_num + 1) - set(gnd_electrode_index) - set(rf_electrode_index)
+excitation_electrodes = rf_electrode_index
 
 command_tag_dict = {'mesh': 'MESH', 
                 'mesh_quality': 'MESH_QUALITY', 
@@ -64,7 +67,7 @@ commands={'mesh':{mesh_tag['file']: mesh_file,   # Mesh
            mesh_quality_tag['report']:'OFF'},
           # set severity to 1 can force nses to exit, otherwise continue
           'electrode':{electrode_exci_tag['file']:None, # Electrode Excitation
-           electrode_exci_tag['list']:'1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22'},
+           electrode_exci_tag['list']:' '.join(str(i) for i in excitation_electrodes)},
           'symmetry':{symmetry_tag['xy']:'NONE',         # Symmetry
            symmetry_tag['xy_offset']:0.0,
            symmetry_tag['xy_width']:0.0,
