@@ -1,7 +1,7 @@
-import nses
-import h5py
-
 def post_process(result_filename="rf_sim.in.h5", output_filename="rf_sim_out.h5", gridID=0, verbose=True):
+    import nses
+    import h5py
+
     electrodes = nses.getSimulationInfo(result_filename, "electrodes")
     x, y, z = nses.getSimulationInfo(result_filename, "grid", gridID)
 
@@ -21,6 +21,25 @@ def post_process(result_filename="rf_sim.in.h5", output_filename="rf_sim_out.h5"
 
     print(output_filename)
     return output_filename
+
+def read_post_processed(filename="rf_sim_out.h5", electrode_names=None):
+
+    import h5py
+
+    with h5py.File(filename, "r") as f:
+        x = f["x"][:]
+        y = f["y"][:]
+        z = f["z"][:]
+
+        if electrode_names is not None:
+            electrodes = electrode_names
+        else:
+            electrodes = [key for key in f.keys() if key not in ["x", "y", "z"]]
+
+        # Datasets are stored under string keys, but callers may pass integer IDs.
+        potentials = {el: f[str(el)][:] for el in electrodes}
+
+    return x, y, z, potentials
 
 
 if __name__ == "__main__":
