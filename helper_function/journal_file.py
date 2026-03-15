@@ -8,9 +8,9 @@ from matplotlib.path import Path as MplPath
 
 
 def generate_journal(
-    processed_gds="output/lionix_gate/chip_design_merged_flattened.gds",
-    journal_filename="output/lionix_gate/chip_geometry.jou",
-    abaqus_filename="run_file/chip_geometry.inp",
+    processed_gds="lionix_gate/gds_file/chip_design_merged_flattened.gds",
+    journal_filename="lionix_gate/run_file/chip.jou",
+    abaqus_filename="run_file/chip.inp",
     target_layer=(1, 0),
     interactive_plot=False,
     save_plot_path=None,
@@ -31,6 +31,9 @@ def generate_journal(
         for polygon in target_polygons:
             polygon_lst.append(np.array(polygon))
 
+    import os
+    os.makedirs(os.path.dirname(os.path.abspath(journal_filename)), exist_ok=True)
+    
     with open(journal_filename, "w") as f:
         f.write("reset\n\n")
 

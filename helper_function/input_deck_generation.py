@@ -101,13 +101,13 @@ def build_commands(mesh_file, grid_file, excitation_electrodes):
      }
 
 # comment out unneccesary operations
-command_lst = ['mesh', 
-               'mesh_quality',
-               'electrode',
-               #'symmetry',
-               'solver',
-               #'cluster',
-               'output']
+# command_lst = ['mesh', 
+#                'mesh_quality',
+#                'electrode',
+#                #'symmetry',
+#                'solver',
+#                #'cluster',
+#                'output']
 
 def write_tag(tag, value):
     if value is not None:
@@ -136,11 +136,10 @@ def generate_input_deck(
     mesh_file=mesh_file,
     input_deck_filename=input_deck_filename,
     grid_file=grid_file,
-    excitation_electrodes=None,
+    excitation_electrodes=excitation_electrodes,
     command_lst=None,
 ):
-    if excitation_electrodes is None:
-        excitation_electrodes = rf_electrode_index
+
 
     if command_lst is None:
         command_lst = [
