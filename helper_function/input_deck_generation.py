@@ -56,47 +56,49 @@ output_tag = {'vtu':'CHARGE_VTU',
 
 # In each command tag group assign values to each tag
 # modify the assign value in this dictionary to be written in input deck 
-commands={'mesh':{mesh_tag['file']: mesh_file,   # Mesh
-           mesh_tag['scale']: 1e-6},
-          'mesh_quality':{mesh_quality_tag['shape_min']:0.2,         # Mesh Quality
-           mesh_quality_tag['shape_max']:10.0,
-           mesh_quality_tag['cond_num_min']:1.0, # 1.0 by default
-           mesh_quality_tag['cond_num_max']:3.0, # 3.0 by default 
-           mesh_quality_tag['shape_sev']:0,
-           mesh_quality_tag['cond_num_sev']:0,
-           mesh_quality_tag['report']:'OFF'},
-          # set severity to 1 can force nses to exit, otherwise continue
-          'electrode':{electrode_exci_tag['file']:None, # Electrode Excitation
-           electrode_exci_tag['list']:' '.join(str(i) for i in excitation_electrodes)},
-          'symmetry':{symmetry_tag['xy']:'NONE',         # Symmetry
-           symmetry_tag['xy_offset']:0.0,
-           symmetry_tag['xy_width']:0.0,
-           symmetry_tag['xy_N']:5,
-           symmetry_tag['xz']:'NONE',
-           symmetry_tag['xz_offset']:0.0,
-           symmetry_tag['yz']:'NONE',
-           symmetry_tag['yz_offset']:0.0,
-           symmetry_tag['rot_mode']:'NONE',
-           symmetry_tag['rot_z']:-1.0},
-          'solver':{solver_tag['precision']:None,   # Solver
-           solver_tag['system']:'COMPRESS',
-           solver_tag['fil_comp_tol']:None,
-           solver_tag['sol_comp_tol']:None,
-           solver_tag['fil_recomp']:None,
-           solver_tag['fil_recomp_tol']:None,
-           solver_tag['comp_off_diag']:None,
-           solver_tag['aca_res']:None,
-           solver_tag['aca_res_size']:None,
-           solver_tag['aca_res_pc']:None},
-          'clusters':{clusters_tag['dist_meth']:None, # Clusters
-           clusters_tag['max_lvl']:None,
-           clusters_tag['min_comp_size']:None,
-           clusters_tag['min_size']:None},
-          'output':{output_tag['efield']:'OFF',   # Output
-           output_tag['grid']:grid_file,
-           output_tag['pot']:'ON',
-           output_tag['vtu']:'OFF',
-           output_tag['xmf']:'OFF'}}
+def build_commands(mesh_file, grid_file, excitation_electrodes):
+     return {
+          'mesh':{mesh_tag['file']: mesh_file,
+              mesh_tag['scale']: 1e-6},
+          'mesh_quality':{mesh_quality_tag['shape_min']:0.2,
+              mesh_quality_tag['shape_max']:10.0,
+              mesh_quality_tag['cond_num_min']:1.0,
+              mesh_quality_tag['cond_num_max']:3.0,
+              mesh_quality_tag['shape_sev']:0,
+              mesh_quality_tag['cond_num_sev']:0,
+              mesh_quality_tag['report']:'OFF'},
+          'electrode':{electrode_exci_tag['file']:None,
+              electrode_exci_tag['list']:' '.join(str(i) for i in excitation_electrodes)},
+          'symmetry':{symmetry_tag['xy']:'NONE',
+              symmetry_tag['xy_offset']:0.0,
+              symmetry_tag['xy_width']:0.0,
+              symmetry_tag['xy_N']:5,
+              symmetry_tag['xz']:'NONE',
+              symmetry_tag['xz_offset']:0.0,
+              symmetry_tag['yz']:'NONE',
+              symmetry_tag['yz_offset']:0.0,
+              symmetry_tag['rot_mode']:'NONE',
+              symmetry_tag['rot_z']:-1.0},
+          'solver':{solver_tag['precision']:None,
+              solver_tag['system']:'COMPRESS',
+              solver_tag['fil_comp_tol']:None,
+              solver_tag['sol_comp_tol']:None,
+              solver_tag['fil_recomp']:None,
+              solver_tag['fil_recomp_tol']:None,
+              solver_tag['comp_off_diag']:None,
+              solver_tag['aca_res']:None,
+              solver_tag['aca_res_size']:None,
+              solver_tag['aca_res_pc']:None},
+          'clusters':{clusters_tag['dist_meth']:None,
+              clusters_tag['max_lvl']:None,
+              clusters_tag['min_comp_size']:None,
+              clusters_tag['min_size']:None},
+          'output':{output_tag['efield']:'OFF',
+              output_tag['grid']:grid_file,
+              output_tag['pot']:'ON',
+              output_tag['vtu']:'OFF',
+              output_tag['xmf']:'OFF'}
+     }
 
 # comment out unneccesary operations
 command_lst = ['mesh', 
@@ -111,7 +113,7 @@ def write_tag(tag, value):
     if value is not None:
         return tag + ' = ' + str(value) + '\n'
 
-def write_tag_group(file, command_tag):
+def write_tag_group(file, command_tag, commands):
     f = open(file=file,mode='a+')
     f.write('<' + command_tag_dict[command_tag] + '_BEG>' + '\n')
     tags = commands[command_tag]
@@ -121,12 +123,39 @@ def write_tag_group(file, command_tag):
     f.write('<' + command_tag_dict[command_tag] + '_END>' + '\n')
     f.close()
 
-def write_commands(command_lst, file=input_deck_filename):
+def write_commands(command_lst, commands, file=input_deck_filename):
     # clear previous commands
     f= open(file, "w")
     f.close()
     
     for command in command_lst:
-        write_tag_group(file, command)
+        write_tag_group(file, command, commands)
 
-write_commands(command_lst=command_lst)
+
+def generate_input_deck(
+    mesh_file=mesh_file,
+    input_deck_filename=input_deck_filename,
+    grid_file=grid_file,
+    excitation_electrodes=None,
+    command_lst=None,
+):
+    if excitation_electrodes is None:
+        excitation_electrodes = rf_electrode_index
+
+    if command_lst is None:
+        command_lst = [
+            'mesh',
+            'mesh_quality',
+            'electrode',
+            'solver',
+            'output',
+        ]
+
+    commands = build_commands(mesh_file, grid_file, excitation_electrodes)
+    write_commands(command_lst=command_lst, commands=commands, file=input_deck_filename)
+    print(input_deck_filename)
+    return input_deck_filename
+
+
+if __name__ == '__main__':
+    generate_input_deck(command_lst=command_lst)

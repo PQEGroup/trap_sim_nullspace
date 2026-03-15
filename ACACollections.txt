@@ -1,6 +1,0 @@
- 
---- Collection ---
-  level = 7
-  id = 0
-  basisMapping.size() = 77655
-  Tag[0] : 1
