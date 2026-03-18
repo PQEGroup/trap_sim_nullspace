@@ -7,4 +7,6 @@ It first pre process the chip to center it and clean up the gdsfile to save only
 
 For simulation in nullspace, additional grid file need to be generated first to determine the ion height then the gradient and Hessian of the field. Input deck file will be generated in correspondence of the grid and abacus file that can be run in nullspace.
 
-Finally, output hdf5 is post processed with the input grid all together into a new hdf5 file with clean format for later data processing.
+Finally, output hdf5 is post processed with the input grid all together into a new hdf5 file with clean format for later data processing and analysis accordingly.
+
+The process is best run in jupyternotebook in each subfolder. In the example of lionix_gate, notebooks are located in gds_file, run_file, and output_file to facilitate the process. 
