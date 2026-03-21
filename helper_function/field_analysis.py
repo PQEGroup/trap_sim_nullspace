@@ -14,42 +14,66 @@ def analyze_rf_pot(Y, Z, phi, ion_height_guess):
     Z = (Z.ravel()-ion_height_guess)
     phi = phi.ravel()
 
-    A = np.column_stack([
+    A = jnp.column_stack([
     Y**2,
     Z**2,
     Y,
     Z,
-    np.ones_like(Y)
+    jnp.ones_like(Y)
     ])
 
-    coeff, *_ = np.linalg.lstsq(A, phi, rcond=None)
+    coeff, *_ = jnp.linalg.lstsq(A, phi, rcond=None)
     a, b, c, d, e = coeff
     ion_height = -d/(2*b)+ion_height_guess
 
-    grad = np.array([0, 0, 0])
-    hessian = np.array([[0, 0, 0], [0, 2*a, 0], [0, 0, 2*b]])
+    grad = jnp.array([0, 0, 0])
+    hessian = jnp.array([[0, 0, 0], [0, 2*a, 0], [0, 0, 2*b]])
     
     return coeff, grad, hessian, ion_height
 
-def analyze_dc_pot(X, Y, Z, phi, x, y, z):
+def analyze_dc_pot(X, Y, Z, phi, x, y, z, dr_fit = None):
+
+    if dr_fit is not None:
+        x_axis = X[:,0,0]
+        y_axis = Y[0,:,0]
+        z_axis = Z[0,0,:]
+
+        dx = x_axis[1] - x_axis[0]
+        dy = y_axis[1] - y_axis[0]
+        dz = z_axis[1] - z_axis[0]
+
+        x_start = int(jnp.floor((x - dr_fit-x_axis[0])/dx))
+        x_end = int(jnp.ceil((x + dr_fit-x_axis[0])/dx))
+        y_start = int(jnp.floor((y - dr_fit-y_axis[0])/dy))
+        y_end = int(jnp.ceil((y + dr_fit-y_axis[0])/dy))
+        z_start = int(jnp.floor((z - dr_fit-z_axis[0])/dz))
+        z_end = int(jnp.ceil((z + dr_fit-z_axis[0])/dz))
+
+        X = X[x_start:x_end, y_start:y_end, z_start:z_end]
+        Y = Y[x_start:x_end, y_start:y_end, z_start:z_end]
+        Z = Z[x_start:x_end, y_start:y_end, z_start:z_end]
+        phi = phi[x_start:x_end, y_start:y_end, z_start:z_end]
+
+
     X = X.ravel()
-    x0 = np.mean(x)
+    x0 = jnp.mean(X)
     X = X - x0
     x = x - x0
 
     Y = Y.ravel()
-    y0 = np.mean(y)
+    y0 = jnp.mean(Y)
     Y = Y - y0
     y = y - y0
    
     Z = Z.ravel()
-    z0 = np.mean(z)
+    z0 = jnp.mean(Z)
     Z = Z - z0
     z = z - z0
 
     phi = phi.ravel()
 
-    A = np.column_stack([
+
+    A = jnp.column_stack([
     X**2 - Z**2,
     Y**2 - Z**2,
     X*Y,
@@ -58,16 +82,17 @@ def analyze_dc_pot(X, Y, Z, phi, x, y, z):
     X,
     Y,
     Z,
-    np.ones_like(Y)
+    jnp.ones_like(Y)
     ])
 
-    coeff, *_ = np.linalg.lstsq(A, phi, rcond=None)
+    coeff, *_ = jnp.linalg.lstsq(A, phi, rcond=None)
     a, b, d, e, f, g, h, i, j = coeff
     c = -a - b
-    grad = np.array([2*a*x + d*y + e*z + g, 2*b*y + d*x + f*z + h, 2*c*z + e*x + f*y + i])
-    hessian = np.array([[2*a, d, e], [d, 2*b, f], [e, f, 2*c]])
+    grad = jnp.array([2*a*x + d*y + e*z + g, 2*b*y + d*x + f*z + h, 2*c*z + e*x + f*y + i])
+    hessian = jnp.array([[2*a, d, e], [d, 2*b, f], [e, f, 2*c]])
 
-    return coeff, np.mean(phi), grad, hessian
+    return coeff, jnp.mean(phi), grad, hessian
+
 
 def hessian_upper_vector(h):
     h_arr = jnp.array(h, dtype=jnp.float64)
@@ -122,16 +147,8 @@ def fit_prep(dc_fields, keys, target_phi, target_grad, target_hessian):
 
     return A.T, b
 
-# def control_find(A, b):
-#     n_inputs = A.shape[1]
-#     n_constraints = A.shape[0]
 
-#     # Minimize voltage square within constrain Ax = b
-#     kkt_lhs = jnp.block([[jnp.identity(n_inputs), A.T], [A, jnp.zeros((n_constraints, n_constraints))]])
-#     kkt_rhs = jnp.concatenate([jnp.zeros(n_inputs), b])
-    
-#     inputs = jnp.linalg.solve(kkt_lhs, kkt_rhs)[:n_inputs]
-#     return inputs
+
 
 def print_field(b, delta_pos = False):
     if len(b) == 10:
