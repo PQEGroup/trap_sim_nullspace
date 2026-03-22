@@ -1,1 +1,7 @@
 venv/
+__pycache__/
+*.pyc
+
+# Generated simulation artifacts (large binary files)
+lionix_gate/output_file/**/*.h5
+lionix_gate/run_file/**/*.h5
