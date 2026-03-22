@@ -5,9 +5,6 @@ def post_process(result_filename="rf_sim.in.h5", output_filename="rf_sim_out.h5"
     electrodes = nses.getSimulationInfo(result_filename, "electrodes")
     x, y, z = nses.getSimulationInfo(result_filename, "grid", gridID)
 
-    electrodes = [22, 23, 24, 25, 27]
-    print(electrodes)
-
     if verbose:
         print(len(electrodes))
         print(x[:, 0, 0])
@@ -21,12 +18,11 @@ def post_process(result_filename="rf_sim.in.h5", output_filename="rf_sim_out.h5"
         for el in electrodes:
             phi = nses.getPotentials(result_filename, gridID, el)
             f.create_dataset(str(el), data=phi)
-            
 
     print(output_filename)
     return output_filename
 
-def read_post_processed(filename="rf_sim_out.h5", electrode_names=None):
+def read_post_processed(filename="rf_sim_out.h5", electrode_list=None):
 
     import h5py
 
@@ -35,8 +31,8 @@ def read_post_processed(filename="rf_sim_out.h5", electrode_names=None):
         y = f["y"][:]
         z = f["z"][:]
 
-        if electrode_names is not None:
-            electrodes = electrode_names
+        if electrode_list is not None:
+            electrodes = electrode_list
         else:
             electrodes = [key for key in f.keys() if key not in ["x", "y", "z"]]
 
