@@ -4,4 +4,6 @@ __pycache__/
 
 # Generated simulation artifacts (large binary files)
 lionix_gate/output_file/**/*.h5
-lionix_gate/run_file/**/*.h5
+lionix_gate/output_file/**/*.h5
+lionix_gate/run_file/**/*.txt
+lionix_gate/run_file/**/*.in.h5
