@@ -22,6 +22,34 @@ def post_process(result_filename="rf_sim.in.h5", output_filename="rf_sim_out.h5"
     print(output_filename)
     return output_filename
 
+def combine_processed(filenames, output_filename="combined_output.h5"):
+    import h5py
+    import numpy as np
+
+    total_potentials = {}
+    X, Y, Z, potentials = read_post_processed(filenames[0])  # Assume all files have the same grid
+    total_potentials.update(potentials)
+
+    for filename in filenames[1:]:
+        x, y, z, potentials = read_post_processed(filename)
+        if not (np.array_equal(X, x) and np.array_equal(Y, y) and np.array_equal(Z, z)):
+            raise ValueError(f"Grid mismatch in file {filename}")
+        else:
+            total_potentials.update(potentials)
+    
+    sorted_total_dict = dict(sorted(total_potentials.items()))
+
+    with h5py.File(output_filename, "w") as f:
+        f.create_dataset("x", data=x)
+        f.create_dataset("y", data=y)
+        f.create_dataset("z", data=z)
+        for el, phi in sorted_total_dict.items():
+            f.create_dataset(str(el), data=phi)
+    
+    print(f"Combined output written to {output_filename}")
+    return output_filename
+    
+
 def read_post_processed(filename="rf_sim_out.h5", electrode_list=None):
 
     import h5py
