@@ -147,7 +147,14 @@ def fit_prep(dc_fields, keys, target_phi, target_grad, target_hessian):
 
     return A.T, b
 
+def quadratic_sol(A, b):
+    P = A.T @ A
+    q = -A.T @ b
+    L = jnp.linalg.cholesky(P+ jnp.eye(A.shape[1])*1e2)
+    x = -jax.scipy.linalg.cho_solve((L, True), q)
 
+    #x = -jax.scipy.linalg.solve(A, b)
+    return L, x
 
 
 def print_field(b, delta_pos = False):
