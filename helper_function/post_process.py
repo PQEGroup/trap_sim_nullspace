@@ -76,17 +76,24 @@ def save_to_artiq(Vks, electrode, mapping_dict, filename="artiq_output.csv"):
 
     input_num = mapping_dict.get("artiq_input_num")
     if Vks.ndim == 1:
-        output_num = np.zeros((1,input_num), dtype=np.float64)
+        output_num = np.zeros((input_num, 1), dtype=np.float64)
+        for el, voltage in zip(electrode, Vks):
+            output_num[mapping_dict[el] - 1, 0] = voltage
+
+        with open(filename, "w") as f:
+            for i in range(output_num.shape[0]):
+                f.write(", ".join([f"{output_num[i, j]:.6f}" for j in range(output_num.shape[1])]) + "\n")
+
     elif Vks.ndim == 2:
         output_num = np.zeros((Vks.shape[0], input_num), dtype=np.float64)
+        for i in range(Vks.shape[0]):
+            for el, voltage in zip(electrode, Vks[i]):
+                output_num[i, mapping_dict[el]-1] = voltage
+        #print(output_num.shape)
 
-    for el, voltage in zip(electrode, Vks):
-        #print(el, voltage)
-        output_num[:, mapping_dict[el]-1] = voltage
-
-    with open(filename, "w") as f:
-        for i in range(output_num.shape[0]):
-            f.write(", ".join([f"{output_num[i, j]:.6f}" for j in range(output_num.shape[1])]) + "\n")
+        with open(filename, "w") as f:
+            for i in range(output_num.shape[0]):
+                f.write(", ".join([f"{output_num[i, j]:.6f}" for j in range(output_num.shape[1])]) + "\n")
 
 if __name__ == "__main__":
     post_process()
