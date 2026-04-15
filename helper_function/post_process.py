@@ -95,5 +95,27 @@ def save_to_artiq(Vks, electrode, mapping_dict, filename="artiq_output.csv"):
             for i in range(output_num.shape[0]):
                 f.write(", ".join([f"{output_num[i, j]:.6f}" for j in range(output_num.shape[1])]) + "\n")
 
+
+def read_from_artiq(electrode, mapping_dict, filename="artiq_output.csv"):
+    import numpy as np
+
+    output_num = np.loadtxt(filename, delimiter=",", ndmin=2)
+
+    if output_num.shape[1] == 1:
+        Vks = np.array(
+            [output_num[mapping_dict[el] - 1, 0] for el in electrode],
+            dtype=np.float64,
+        )
+    else:
+        Vks = np.array(
+            [
+                [output_num[i, mapping_dict[el] - 1] for el in electrode]
+                for i in range(output_num.shape[0])
+            ],
+            dtype=np.float64,
+        )
+
+    return Vks
+
 if __name__ == "__main__":
     post_process()
