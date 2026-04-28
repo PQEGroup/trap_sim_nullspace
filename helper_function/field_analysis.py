@@ -31,7 +31,136 @@ def analyze_rf_pot(Y, Z, phi, ion_height_guess):
     
     return coeff, grad, hessian, ion_height
 
-def analyze_dc_pot(X, Y, Z, phi, x, y, z, dr_fit = None):
+def get_pot(X, Y, Z, phi, x_range, y_range, z_range):
+    X = jnp.asarray(X)
+    Y = jnp.asarray(Y)
+    Z = jnp.asarray(Z)
+    phi = jnp.asarray(phi)
+
+    x_axis = X[:, 0, 0]
+    y_axis = Y[0, :, 0]
+    z_axis = Z[0, 0, :]
+    
+    dx = x_axis[1] - x_axis[0]
+    dy = y_axis[1] - y_axis[0]
+    dz = z_axis[1] - z_axis[0]
+
+    x_start = int(jnp.floor((x_range[0] - x_axis[0]) / dx))
+    x_end = int(jnp.ceil((x_range[1] - x_axis[0]) / dx)) + 1
+    y_start = int(jnp.floor((y_range[0] - y_axis[0]) / dy))
+    y_end = int(jnp.ceil((y_range[1] - y_axis[0]) / dy)) + 1
+    z_start = int(jnp.floor((z_range[0] - z_axis[0]) / dz))
+    z_end = int(jnp.ceil((z_range[1] - z_axis[0]) / dz)) + 1
+
+    nx, ny, nz = phi.shape
+    x_start = max(0, x_start)
+    y_start = max(0, y_start)
+    z_start = max(0, z_start)
+    x_end = min(nx, x_end)
+    y_end = min(ny, y_end)
+    z_end = min(nz, z_end)
+
+    X = X[x_start:x_end, y_start:y_end, z_start:z_end]
+    Y = Y[x_start:x_end, y_start:y_end, z_start:z_end]
+    Z = Z[x_start:x_end, y_start:y_end, z_start:z_end]
+    phi = phi[x_start:x_end, y_start:y_end, z_start:z_end]
+    
+    return X, Y, Z, phi
+
+# ...existing code...
+def analyze_dc_pot(X, Y, Z, phi, x, y, z, dr_fit=None):
+    X = jnp.asarray(X)
+    Y = jnp.asarray(Y)
+    Z = jnp.asarray(Z)
+    phi = jnp.asarray(phi)
+
+    x_axis = X[:, 0, 0]
+    y_axis = Y[0, :, 0]
+    z_axis = Z[0, 0, :]
+
+    # Optional local crop around (x, y, z)
+    if dr_fit is not None:
+        dx = x_axis[1] - x_axis[0]
+        dy = y_axis[1] - y_axis[0]
+        dz = z_axis[1] - z_axis[0]
+
+        x_start = int(jnp.floor((x - dr_fit - x_axis[0]) / dx))
+        x_end = int(jnp.ceil((x + dr_fit - x_axis[0]) / dx)) + 1
+        y_start = int(jnp.floor((y - dr_fit - y_axis[0]) / dy))
+        y_end = int(jnp.ceil((y + dr_fit - y_axis[0]) / dy)) + 1
+        z_start = int(jnp.floor((z - dr_fit - z_axis[0]) / dz))
+        z_end = int(jnp.ceil((z + dr_fit - z_axis[0]) / dz)) + 1
+
+        nx, ny, nz = phi.shape
+        x_start = max(0, x_start)
+        y_start = max(0, y_start)
+        z_start = max(0, z_start)
+        x_end = min(nx, x_end)
+        y_end = min(ny, y_end)
+        z_end = min(nz, z_end)
+
+        X = X[x_start:x_end, y_start:y_end, z_start:z_end]
+        Y = Y[x_start:x_end, y_start:y_end, z_start:z_end]
+        Z = Z[x_start:x_end, y_start:y_end, z_start:z_end]
+        phi = phi[x_start:x_end, y_start:y_end, z_start:z_end]
+
+        x_axis = X[:, 0, 0]
+        y_axis = Y[0, :, 0]
+        z_axis = Z[0, 0, :]
+
+    # Center coordinates at evaluation point
+    U = (X - x).ravel()
+    V = (Y - y).ravel()
+    W = (Z - z).ravel()
+    phif = phi.ravel()
+
+    # Laplace-constrained quadratic basis
+    # phi = a(U^2-W^2) + b(V^2-W^2) + dUV + eUW + fVW + gU + hV + iW + j0
+    A = jnp.column_stack([
+        U**2 - W**2,
+        V**2 - W**2,
+        U * V,
+        U * W,
+        V * W,
+        U,
+        V,
+        W,
+        jnp.ones_like(U),
+    ])
+
+    # Gaussian weights (local weighted least squares)
+    if dr_fit is not None:
+        fit_sigma = 0.5 * dr_fit
+    else:
+        dx = x_axis[1] - x_axis[0]
+        dy = y_axis[1] - y_axis[0]
+        dz = z_axis[1] - z_axis[0]
+        fit_sigma = 2.0 * jnp.max(jnp.array([dx, dy, dz]))
+
+    r2 = U**2 + V**2 + W**2
+    w = jnp.exp(-0.5 * r2 / (fit_sigma**2 + 1e-30))
+    sw = jnp.sqrt(w + 1e-30)
+
+    Aw = A * sw[:, None]
+    bw = phif * sw
+
+    coeff, *_ = jnp.linalg.lstsq(Aw, bw, rcond=None)
+    a, b, d, e, f, g, h, i, j0 = coeff
+    c = -a - b
+
+    # At centered point (U,V,W)=(0,0,0)
+    phi_at_point = j0
+    grad = jnp.array([g, h, i], dtype=jnp.float64)
+    hessian = jnp.array([
+        [2 * a, d, e],
+        [d, 2 * b, f],
+        [e, f, 2 * c],
+    ], dtype=jnp.float64)
+
+    return coeff, phi_at_point, grad, hessian
+# ...existing code...
+
+def analyze_dc_pot_0(X, Y, Z, phi, x, y, z, dr_fit = None):
 
     if dr_fit is not None:
         x_axis = X[:,0,0]
@@ -147,7 +276,14 @@ def fit_prep(dc_fields, keys, target_phi, target_grad, target_hessian):
 
     return A.T, b
 
+def quadratic_sol(A, b):
+    P = A.T @ A
+    q = -A.T @ b
+    L = jnp.linalg.cholesky(P+ jnp.eye(A.shape[1])*1e2)
+    x = -jax.scipy.linalg.cho_solve((L, True), q)
 
+    #x = -jax.scipy.linalg.solve(A, b)
+    return L, x
 
 
 def print_field(b, delta_pos = False):

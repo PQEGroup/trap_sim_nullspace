@@ -42,6 +42,7 @@ def run_pre_process(
 	for points in merged.get_polygons_points(by="tuple", layers=[target_layer]).get(target_layer, []):
 		clean.add_polygon(points, layer=target_layer)
 
+	clean.flatten()
 	clean.write_gds(str(output_path), with_metadata=False, no_empty_cells=True)
 	if show:
 		try:

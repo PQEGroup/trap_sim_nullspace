@@ -1,6 +1,7 @@
 def post_process(result_filename="rf_sim.in.h5", output_filename="rf_sim_out.h5", gridID=0, verbose=True):
     import nses
     import h5py
+    
 
     electrodes = nses.getSimulationInfo(result_filename, "electrodes")
     x, y, z = nses.getSimulationInfo(result_filename, "grid", gridID)
@@ -69,6 +70,52 @@ def read_post_processed(filename="rf_sim_out.h5", electrode_list=None):
 
     return x, y, z, potentials
 
+def save_to_artiq(Vks, electrode, mapping_dict, filename="artiq_output.csv"):
+
+    import numpy as np
+
+    input_num = mapping_dict.get("artiq_input_num")
+    if Vks.ndim == 1:
+        output_num = np.zeros((input_num, 1), dtype=np.float64)
+        for el, voltage in zip(electrode, Vks):
+            output_num[mapping_dict[el] - 1, 0] = voltage
+
+        with open(filename, "w") as f:
+            for i in range(output_num.shape[0]):
+                f.write(", ".join([f"{output_num[i, j]:.6f}" for j in range(output_num.shape[1])]) + "\n")
+
+    elif Vks.ndim == 2:
+        output_num = np.zeros((Vks.shape[0], input_num), dtype=np.float64)
+        for i in range(Vks.shape[0]):
+            for el, voltage in zip(electrode, Vks[i]):
+                output_num[i, mapping_dict[el]-1] = voltage
+        #print(output_num.shape)
+
+        with open(filename, "w") as f:
+            for i in range(output_num.shape[0]):
+                f.write(", ".join([f"{output_num[i, j]:.6f}" for j in range(output_num.shape[1])]) + "\n")
+
+
+def read_from_artiq(electrode, mapping_dict, filename="artiq_output.csv"):
+    import numpy as np
+
+    output_num = np.loadtxt(filename, delimiter=",", ndmin=2)
+
+    if output_num.shape[1] == 1:
+        Vks = np.array(
+            [output_num[mapping_dict[el] - 1, 0] for el in electrode],
+            dtype=np.float64,
+        )
+    else:
+        Vks = np.array(
+            [
+                [output_num[i, mapping_dict[el] - 1] for el in electrode]
+                for i in range(output_num.shape[0])
+            ],
+            dtype=np.float64,
+        )
+
+    return Vks
 
 if __name__ == "__main__":
     post_process()
