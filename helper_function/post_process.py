@@ -5,7 +5,7 @@ def post_process(result_filename="rf_sim.in.h5", output_filename="rf_sim_out.h5"
 
     electrodes = nses.getSimulationInfo(result_filename, "electrodes")
     x, y, z = nses.getSimulationInfo(result_filename, "grid", gridID)
-    electrodes = [22, 23, 24, 25, 27]
+    #electrodes = [22, 23, 24, 25, 27]
     if verbose:
         print(len(electrodes))
         print(x[:, 0, 0])
