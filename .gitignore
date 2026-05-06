@@ -7,5 +7,3 @@ lionix_gate/output_file/**/*.h5
 lionix_gate/output_file/**/*.h5
 lionix_gate/run_file/**/*.txt
 lionix_gate/run_file/**/*.in.h5
-aim_sw/output_file/**/*.h5
-aim_sw/run_file/**/*.in.h5
